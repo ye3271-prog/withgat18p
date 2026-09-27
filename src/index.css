@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  --mara-red: #dc2626;
+  --mara-dark-red: #7f1d1d;
+  --mara-deep: #450a0a;
+  --warm-orange: #ea580c;
+  --warm-amber: #f59e0b;
+  --warm-cream: #fffaf5;
+  --slate-dark: #334155;
+}
+
+@layer base {
+  body {
+    background-color: #fffaf5;
+    color: #334155;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+.font-game {
+  font-family: 'Jua', 'Noto Sans KR', sans-serif;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Warm Spicy Malatang Red & Orange Action Buttons */
+.btn-vibrant-primary {
+  background-color: var(--mara-red);
+  color: #ffffff;
+  border-radius: 1rem;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #991b1b;
+  transition: all 0.15s ease;
+}
+.btn-vibrant-primary:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+.btn-vibrant-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #991b1b;
+}
+
+.btn-vibrant-accent {
+  background-color: var(--warm-orange);
+  color: #ffffff;
+  border-radius: 1rem;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #9a3412;
+  transition: all 0.15s ease;
+}
+.btn-vibrant-accent:hover {
+  background-color: #c2410c;
+  transform: translateY(-1px);
+}
+.btn-vibrant-accent:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #9a3412;
+}
+
+/* Custom smooth warm scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(254, 215, 170, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(234, 88, 12, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.7);
+}

@@ -1,0 +1,7 @@
+{
+  "name": "마라탕 조리법 레이드",
+  "description": "중학교 기술·가정 조리 방법 수업을 위한 미션형 게임 교육 웹앱. 마라탕 레시피 속 조리방법 탐색, 생조리·가열조리 특징 분석, 조리 순서 완성 레이드.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
