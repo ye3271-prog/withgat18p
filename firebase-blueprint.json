@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "GroupProgress": {
+      "title": "GroupProgress",
+      "description": "Educational classroom group raid progress and inquiry responses",
+      "type": "object",
+      "properties": {
+        "groupName": {
+          "type": "string",
+          "description": "Name of the group (e.g. 1모둠)"
+        },
+        "score": {
+          "type": "number",
+          "description": "Total earned raid score"
+        },
+        "mission1Cleared": {
+          "type": "boolean",
+          "description": "Whether Mission 1 is completed"
+        },
+        "mission2Cleared": {
+          "type": "boolean",
+          "description": "Whether Mission 2 is completed"
+        },
+        "mission3Cleared": {
+          "type": "boolean",
+          "description": "Whether Mission 3 is completed"
+        },
+        "currentMission": {
+          "type": "number",
+          "description": "Currently active mission number"
+        },
+        "methodId": {
+          "type": "string",
+          "description": "Selected cooking method ID (soak, stir, boil)"
+        },
+        "methodName": {
+          "type": "string",
+          "description": "Selected cooking method Korean name"
+        },
+        "answer1": {
+          "type": "string",
+          "description": "Student inquiry answer for Question 1"
+        },
+        "answer2": {
+          "type": "string",
+          "description": "Student inquiry answer for Question 2"
+        },
+        "answer3": {
+          "type": "string",
+          "description": "Student inquiry answer for Question 3"
+        },
+        "lastUpdated": {
+          "type": "number",
+          "description": "Epoch timestamp of last update"
+        }
+      },
+      "required": ["groupName", "score", "mission1Cleared", "mission2Cleared", "mission3Cleared", "currentMission", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "/groups/{groupId}": {
+      "schema": "GroupProgress",
+      "description": "Real-time sync progress for each student group"
+    },
+    "/test/{testId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "number" }
+        }
+      },
+      "description": "Connection verification document"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Trophy, ArrowRight, Star, Flame, X } from 'lucide-react';
+import { Sparkles, Trophy, ArrowRight, Star, Flame, X, Zap, Clock } from 'lucide-react';
 import { sfx } from '../utils/audio';
 
 interface ClearCelebrationModalProps {
@@ -9,6 +9,8 @@ interface ClearCelebrationModalProps {
   subtitle: string;
   badgeText: string;
   pointsEarned: number;
+  speedBonusEarned?: number;
+  timeSeconds?: number;
   onNext: () => void;
   nextButtonText: string;
   icon?: React.ReactNode;
@@ -20,6 +22,8 @@ export const ClearCelebrationModal: React.FC<ClearCelebrationModalProps> = ({
   subtitle,
   badgeText,
   pointsEarned,
+  speedBonusEarned = 0,
+  timeSeconds,
   onNext,
   nextButtonText,
   icon,
@@ -100,20 +104,60 @@ export const ClearCelebrationModal: React.FC<ClearCelebrationModalProps> = ({
           </motion.p>
 
           {/* Points Earned Box */}
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-2xl p-3.5 mb-6 flex items-center justify-center gap-3"
-          >
-            <Star className="w-6 h-6 text-[#ea580c] fill-[#ea580c] animate-spin" />
-            <span className="text-stone-800 font-bold text-sm sm:text-base">
-              레이드 보상 점수:
-            </span>
-            <span className="text-xl sm:text-2xl font-black text-[#dc2626] font-game">
-              +{pointsEarned} pt
-            </span>
-          </motion.div>
+          <div className="space-y-2.5 mb-6 text-left">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-2xl p-3 flex items-center justify-between px-4 sm:px-5"
+            >
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-[#ea580c] fill-[#ea580c]" />
+                <span className="text-stone-800 font-bold text-xs sm:text-sm">기본 클리어 점수</span>
+              </div>
+              <span className="text-lg sm:text-xl font-black text-[#dc2626] font-game">
+                +{pointsEarned} pt
+              </span>
+            </motion.div>
+
+            {speedBonusEarned !== undefined && speedBonusEarned > 0 ? (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 5 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-gradient-to-r from-amber-500/15 via-yellow-400/25 to-amber-500/15 border-2 border-amber-400 rounded-2xl p-3 flex items-center justify-between px-4 sm:px-5 shadow-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="p-1 rounded-lg bg-amber-500 text-white animate-bounce shrink-0">
+                    <Zap className="w-4 h-4 fill-white" />
+                  </span>
+                  <div>
+                    <span className="text-amber-950 font-black text-xs sm:text-sm block">⚡ 광속 스피드 보너스!</span>
+                    {timeSeconds !== undefined && (
+                      <span className="text-[11px] text-amber-800 font-medium block">
+                        ⏱️ 미션 완료 소요 시간: {timeSeconds}초
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg sm:text-xl font-black text-amber-600 font-game animate-pulse shrink-0">
+                  +{speedBonusEarned} pt
+                </span>
+              </motion.div>
+            ) : timeSeconds !== undefined ? (
+              <div className="text-[11px] text-stone-500 text-center flex items-center justify-center gap-1">
+                <Clock className="w-3.5 h-3.5 text-stone-400" />
+                <span>미션 소요 시간: {timeSeconds}초 (다음 미션에선 더 빠르게 도전해 보세요!)</span>
+              </div>
+            ) : null}
+
+            <div className="pt-1 flex items-center justify-between px-2 text-xs font-bold text-stone-700">
+              <span>이번 미션 총 획득:</span>
+              <span className="text-lg sm:text-xl font-black text-[#ea580c] font-game">
+                +{pointsEarned + (speedBonusEarned || 0)} pt
+              </span>
+            </div>
+          </div>
 
           {/* Next Button */}
           <motion.button

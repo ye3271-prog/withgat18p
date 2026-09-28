@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Lock, 
   CheckCircle2, 
@@ -11,7 +11,11 @@ import {
   GraduationCap,
   Sparkles,
   Award,
-  Flame
+  Flame,
+  Users,
+  Zap,
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { GameScreen, MissionId } from '../types';
 import { sfx } from '../utils/audio';
@@ -21,11 +25,15 @@ interface HeaderProps {
   activeMission: MissionId;
   groupName: string | null;
   score: number;
+  speedBonus?: number;
+  elapsedSeconds?: number;
+  potentialBonus?: { bonus: number; badge: string };
   mission1Cleared: boolean;
   mission2Cleared: boolean;
   mission3Cleared: boolean;
   onOpenRecipe: () => void;
   onOpenTeacherMode: () => void;
+  onOpenLiveDashboard: () => void;
   onSelectMission?: (mission: MissionId) => void;
 }
 
@@ -34,15 +42,20 @@ export const Header: React.FC<HeaderProps> = ({
   activeMission,
   groupName,
   score,
+  speedBonus = 0,
+  elapsedSeconds = 0,
+  potentialBonus,
   mission1Cleared,
   mission2Cleared,
   mission3Cleared,
   onOpenRecipe,
   onOpenTeacherMode,
+  onOpenLiveDashboard,
   onSelectMission,
 }) => {
   const [isMuted, setIsMuted] = useState(sfx.isMuted);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
   const toggleSound = () => {
     const muted = sfx.toggleMute();
@@ -134,15 +147,43 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Score Badge */}
-            <div className="bg-[#450a0a]/80 border border-orange-500/50 px-3.5 py-1.5 rounded-xl text-center shadow-inner flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-400 animate-pulse" />
+            <div className="bg-[#450a0a]/80 border border-orange-500/50 px-3 py-1.5 rounded-xl text-center shadow-inner flex items-center gap-2">
+              <Award className="w-4 h-4 text-amber-400 animate-pulse shrink-0" />
               <div>
                 <span className="text-[10px] text-orange-200/80 block font-medium leading-tight">레이드 점수</span>
-                <span className="text-xs sm:text-sm font-black text-amber-300 font-game">
-                  {score} <span className="text-[10px] text-orange-200 font-normal">/ 300 pt</span>
-                </span>
+                <div className="flex items-center gap-1 justify-center">
+                  <span className="text-xs sm:text-sm font-black text-amber-300 font-game">
+                    {score} pt
+                  </span>
+                  {speedBonus > 0 && (
+                    <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold px-1.5 py-0.2 rounded-md flex items-center gap-0.5 shadow-xs">
+                      <Zap className="w-2.5 h-2.5 fill-white" />
+                      +{speedBonus}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Live Stopwatch & Speed Bonus Badge (during active missions) */}
+            {(currentScreen === 'mission1' || currentScreen === 'mission2' || currentScreen === 'mission3') && (
+              <div className="hidden lg:flex items-center gap-2 bg-[#3f0808]/90 border border-amber-500/40 px-3 py-1.5 rounded-xl shadow-inner text-xs">
+                <Clock className="w-3.5 h-3.5 text-amber-300 animate-spin" style={{ animationDuration: '6s' }} />
+                <span className="font-mono font-bold text-amber-200 text-xs">
+                  {Math.floor(elapsedSeconds / 60).toString().padStart(2, '0')}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
+                </span>
+                {potentialBonus && (
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                    potentialBonus.bonus > 0 
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs animate-pulse' 
+                      : 'bg-stone-800 text-stone-300'
+                  }`}>
+                    <Zap className="w-2.5 h-2.5 fill-white" />
+                    <span>{potentialBonus.badge}</span>
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Utility buttons */}
             <div className="flex items-center gap-1">
@@ -162,6 +203,20 @@ export const Header: React.FC<HeaderProps> = ({
                 title="전자칠판 전체화면 토글"
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+
+              <button
+                id="header-live-dashboard-btn"
+                onClick={() => {
+                  sfx.playClick();
+                  onOpenLiveDashboard();
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#ea580c] hover:from-amber-600 hover:to-[#c2410c] text-white transition border border-amber-300 shadow-md text-xs font-black font-game cursor-pointer"
+                title="실시간 전체 모둠 현황판 열기"
+              >
+                <Users className="w-4 h-4 text-white" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>모둠 현황판</span>
               </button>
 
               <button
@@ -233,18 +288,31 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Mission 3 */}
             <button
-              onClick={() => onSelectMission && onSelectMission(3)}
+              onClick={() => {
+                if (!mission2Cleared) {
+                  sfx.playWrong();
+                  setNoticeMessage('⚠️ 2단계 조리과학 탐구 보고서를 먼저 작성하고 제출해야 3단계 미션이 열립니다!');
+                  setTimeout(() => setNoticeMessage(null), 4000);
+                  return;
+                }
+                onSelectMission && onSelectMission(3);
+              }}
               disabled={currentScreen === 'start' || currentScreen === 'group_select'}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition cursor-pointer ${
                 activeMission === 3 && currentScreen === 'mission3'
                   ? 'bg-gradient-to-r from-[#ea580c] to-[#dc2626] text-white shadow-md ring-2 ring-amber-300 font-black'
                   : mission3Cleared
                   ? 'bg-[#5c1313] text-orange-100 hover:bg-[#731919] border border-orange-400/30'
-                  : 'bg-[#4a0d0d] text-orange-200 hover:bg-[#5c1313] border border-orange-500/30'
+                  : mission2Cleared
+                  ? 'bg-[#4a0d0d] text-orange-200 hover:bg-[#5c1313] border border-orange-500/30'
+                  : 'bg-[#2b0707] text-orange-400/50 hover:bg-[#3d0909]'
               }`}
+              title={!mission2Cleared ? "2단계 보고서 제출 후 진입 가능" : "3단계 이동"}
             >
               {mission3Cleared ? (
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />
+              ) : !mission2Cleared ? (
+                <Lock className="w-3.5 h-3.5 text-orange-400/60" />
               ) : (
                 <span className="w-3.5 h-3.5 rounded-full bg-orange-600 text-white flex items-center justify-center text-[9px] font-bold">3</span>
               )}
@@ -274,6 +342,29 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Warning Notification Toast */}
+        <AnimatePresence>
+          {noticeMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              className="mt-2 bg-gradient-to-r from-rose-950 via-[#7f1d1d] to-rose-950 border-2 border-amber-400 text-amber-200 px-4 py-2 rounded-2xl shadow-2xl flex items-center justify-between text-xs font-bold font-game"
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-300 animate-bounce shrink-0" />
+                <span>{noticeMessage}</span>
+              </div>
+              <button 
+                onClick={() => setNoticeMessage(null)}
+                className="text-white hover:text-amber-300 ml-3 text-xs underline cursor-pointer shrink-0"
+              >
+                닫기
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </header>

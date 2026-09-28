@@ -11,7 +11,10 @@ import {
   Droplets, 
   ChefHat,
   MessageCircleQuestion,
-  Printer
+  Printer,
+  Zap,
+  Clock,
+  Users
 } from 'lucide-react';
 import { COOKING_METHODS_DATA } from '../data/cookingData';
 import { sfx } from '../utils/audio';
@@ -19,15 +22,21 @@ import { sfx } from '../utils/audio';
 interface ResultScreenProps {
   groupName: string;
   score: number;
+  speedBonus?: number;
+  totalTimeSeconds?: number;
   onRestart: () => void;
   onOpenTeacherMode: () => void;
+  onOpenLiveDashboard?: () => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   groupName,
   score,
+  speedBonus = 0,
+  totalTimeSeconds = 0,
   onRestart,
   onOpenTeacherMode,
+  onOpenLiveDashboard,
 }) => {
   const discoveredMethods = COOKING_METHODS_DATA.filter((m) => m.isCorrect);
 
@@ -35,6 +44,20 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     sfx.playClick();
     window.print();
   };
+
+  const minutes = Math.floor(totalTimeSeconds / 60);
+  const seconds = totalTimeSeconds % 60;
+
+  // Title rank evaluation
+  let titleBadge = '🍲 꼼꼼한 마라 탐정 (B랭크)';
+  let titleBg = 'bg-stone-100 text-stone-800 border-stone-300';
+  if (score >= 400) {
+    titleBadge = '⚡ 전설의 광속 마라 셰프 (S랭크)';
+    titleBg = 'bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 border-amber-400 shadow-md font-black animate-pulse';
+  } else if (score >= 340) {
+    titleBadge = '🔥 열혈 조리 과학자 (A랭크)';
+    titleBg = 'bg-gradient-to-r from-orange-400 to-amber-300 text-orange-950 border-orange-300 shadow-sm font-black';
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
@@ -59,9 +82,15 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </motion.div>
 
         {/* Top Badges */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-[#c2410c] font-black text-xs sm:text-sm font-game mb-3 shadow-xs">
-          <Sparkles className="w-4 h-4 text-[#ea580c]" />
-          <span>기술·가정 조리 탐정 레이드 완수</span>
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-100 border border-orange-300 text-[#c2410c] font-black text-xs sm:text-sm font-game shadow-xs">
+            <Sparkles className="w-4 h-4 text-[#ea580c]" />
+            <span>기술·가정 조리 탐정 레이드 완수</span>
+          </div>
+
+          <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-xs sm:text-sm font-game ${titleBg}`}>
+            <span>{titleBadge}</span>
+          </div>
         </div>
 
         <h2 className="text-3xl sm:text-5xl font-black text-[#7f1d1d] font-game mb-2 tracking-tight italic">
@@ -72,15 +101,32 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           "마라탕 속 조리방법을 모두 찾아냈습니다!"
         </p>
 
-        {/* Group & Score Badge Box */}
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mb-8">
+        {/* Group & Score Badge Box with Speed Bonus */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
           <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-2xl">
             <span className="text-xs text-orange-800 font-bold block mb-0.5">활동 모둠</span>
             <span className="text-xl sm:text-2xl font-black text-[#7f1d1d] font-game">{groupName}</span>
           </div>
-          <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl">
+
+          <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-2xl relative overflow-hidden">
             <span className="text-xs text-amber-800 font-bold block mb-0.5">최종 획득 점수</span>
-            <span className="text-xl sm:text-2xl font-black text-[#dc2626] font-game">{score} / 300 pt</span>
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="text-2xl sm:text-3xl font-black text-[#dc2626] font-game">{score}</span>
+              <span className="text-xs text-stone-500 font-normal">/ 450 pt</span>
+            </div>
+            {speedBonus > 0 && (
+              <span className="text-[11px] text-amber-700 font-black mt-1 inline-flex items-center gap-0.5 bg-amber-200/80 px-2 py-0.5 rounded-full">
+                <Zap className="w-3 h-3 fill-amber-600 text-amber-600" />
+                스피드 보너스 +{speedBonus}pt 포함
+              </span>
+            )}
+          </div>
+
+          <div className="bg-stone-50 border-2 border-stone-200 p-4 rounded-2xl">
+            <span className="text-xs text-stone-600 font-bold block mb-0.5">총 소요 시간</span>
+            <span className="text-xl sm:text-2xl font-black text-stone-800 font-game">
+              {minutes > 0 ? `${minutes}분 ` : ''}{seconds}초
+            </span>
           </div>
         </div>
 
@@ -157,6 +203,19 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             <Printer className="w-4 h-4" />
             <span>결과지 인쇄 / PDF 저장</span>
           </button>
+
+          {onOpenLiveDashboard && (
+            <button
+              onClick={() => {
+                sfx.playClick();
+                onOpenLiveDashboard();
+              }}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-[#ea580c] hover:from-amber-600 hover:to-[#c2410c] text-white font-black px-6 py-3 rounded-2xl transition text-sm font-game shadow-[0_4px_0_#9a3412] active:translate-y-1 active:shadow-none cursor-pointer border border-amber-300"
+            >
+              <Users className="w-4 h-4 text-white" />
+              <span>전체 모둠 실시간 랭킹 보기</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

@@ -223,10 +223,13 @@ export const TeacherModeModal: React.FC<TeacherModeModalProps> = ({
                     <Users className="w-4 h-4 text-[#ea580c]" />
                     전체 모둠 실시간 진행도
                   </h4>
-                  <span className="text-xs text-stone-500">학생 브라우저 자동 로컬 저장</span>
+                  <span className="text-xs text-emerald-600 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    전 기기 클라우드 연동 중
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {GROUPS_LIST.map((group) => {
                     const data = allGroupsData[group];
                     const isCurrent = currentGroup === group;
@@ -234,6 +237,7 @@ export const TeacherModeModal: React.FC<TeacherModeModalProps> = ({
                     const isM1 = data ? data.mission1Cleared : false;
                     const isM2 = data ? data.mission2Cleared : false;
                     const isM3 = data ? data.mission3Cleared : false;
+                    const m2 = data?.mission2Answer;
 
                     return (
                       <div
@@ -244,7 +248,7 @@ export const TeacherModeModal: React.FC<TeacherModeModalProps> = ({
                             : 'bg-white border-stone-200'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center justify-between mb-1">
                           <span className="font-black text-stone-800 font-game text-sm">{group}</span>
                           {isCurrent && (
                             <span className="text-[9px] bg-[#dc2626] text-white font-bold px-1.5 py-0.5 rounded">
@@ -257,11 +261,23 @@ export const TeacherModeModal: React.FC<TeacherModeModalProps> = ({
                           {groupScore} pt
                         </div>
 
-                        <div className="flex items-center gap-1 text-[10px]">
-                          <span className={`px-1.5 py-0.5 rounded ${isM1 ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-400'}`}>M1</span>
-                          <span className={`px-1.5 py-0.5 rounded ${isM2 ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-400'}`}>M2</span>
-                          <span className={`px-1.5 py-0.5 rounded ${isM3 ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-100 text-stone-400'}`}>M3</span>
+                        <div className="flex items-center gap-1 text-[10px] mb-2">
+                          <span className={`px-1.5 py-0.5 rounded font-bold ${isM1 ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-400'}`}>M1 {isM1 ? '✓' : ''}</span>
+                          <span className={`px-1.5 py-0.5 rounded font-bold ${isM2 ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-400'}`}>M2 {isM2 ? '✓' : ''}</span>
+                          <span className={`px-1.5 py-0.5 rounded font-bold ${isM3 ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-400'}`}>M3 {isM3 ? '✓' : ''}</span>
                         </div>
+
+                        {/* M2 Inquiry Answer Preview */}
+                        {m2 ? (
+                          <div className="text-[10px] bg-amber-50 p-2 rounded-xl border border-amber-200/80 mb-2">
+                            <span className="font-bold text-amber-950 block mb-0.5">[{m2.methodName}] 탐구 제출 완료</span>
+                            <p className="text-stone-700 line-clamp-2 italic">"{m2.answer1}"</p>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-stone-400 p-1.5 bg-stone-50 rounded-lg text-center mb-2">
+                            {isM1 ? '2단계 작성 중...' : '시작 대기'}
+                          </div>
+                        )}
 
                         <button
                           onClick={() => {
@@ -270,7 +286,7 @@ export const TeacherModeModal: React.FC<TeacherModeModalProps> = ({
                               onResetGroup(group);
                             }
                           }}
-                          className="w-full mt-2 pt-1 border-t text-[10px] text-rose-500 hover:underline text-center block cursor-pointer"
+                          className="w-full pt-1.5 border-t border-stone-200 text-[10px] text-rose-500 hover:underline text-center block cursor-pointer"
                         >
                           모둠 초기화
                         </button>

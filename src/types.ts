@@ -31,10 +31,16 @@ export interface RecipeStep {
 export interface GroupProgress {
   groupName: string;
   score: number;
+  speedBonus: number;
+  totalScore: number;
   mission1Cleared: boolean;
   mission2Cleared: boolean;
   mission3Cleared: boolean;
   currentMission: MissionId;
+  totalTimeSeconds?: number;
+  mission1TimeSeconds?: number;
+  mission2TimeSeconds?: number;
+  mission3TimeSeconds?: number;
   mission2Answer?: {
     methodId: string;
     methodName: string;

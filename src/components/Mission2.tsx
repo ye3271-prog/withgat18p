@@ -13,35 +13,57 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Volume2
+  Volume2,
+  AlertCircle
 } from 'lucide-react';
 import { COOKING_METHODS_DATA, THEORY_INFO } from '../data/cookingData';
 import { CookingMethod } from '../types';
 import { sfx } from '../utils/audio';
 
 interface Mission2Props {
-  onComplete: () => void;
+  onComplete: (answers: {
+    methodId: string;
+    methodName: string;
+    answer1: string;
+    answer2: string;
+    answer3: string;
+  }) => void;
   onOpenRecipe: () => void;
   isAlreadyCleared: boolean;
+  initialAnswers?: {
+    methodId: string;
+    methodName: string;
+    answer1: string;
+    answer2: string;
+    answer3: string;
+  };
 }
 
 export const Mission2: React.FC<Mission2Props> = ({ 
   onComplete, 
   onOpenRecipe,
-  isAlreadyCleared 
+  isAlreadyCleared,
+  initialAnswers
 }) => {
   // Correct pool of methods from Mission 1
   const validMethods = COOKING_METHODS_DATA.filter((m) => m.isCorrect);
 
   // States
-  const [isDrawn, setIsDrawn] = useState<boolean>(isAlreadyCleared);
+  const [isDrawn, setIsDrawn] = useState<boolean>(isAlreadyCleared || !!initialAnswers);
   const [isFlipping, setIsFlipping] = useState<boolean>(false);
-  const [selectedMethod, setSelectedMethod] = useState<CookingMethod>(validMethods[1]); // Default to '볶기'
+  const [selectedMethod, setSelectedMethod] = useState<CookingMethod>(() => {
+    if (initialAnswers?.methodId) {
+      const found = validMethods.find((m) => m.id === initialAnswers.methodId);
+      if (found) return found;
+    }
+    return validMethods[1]; // Default to '볶기'
+  });
 
   // Student inputs
-  const [answer1, setAnswer1] = useState<string>('');
-  const [answer2, setAnswer2] = useState<string>('');
-  const [answer3, setAnswer3] = useState<string>('');
+  const [answer1, setAnswer1] = useState<string>(initialAnswers?.answer1 || '');
+  const [answer2, setAnswer2] = useState<string>(initialAnswers?.answer2 || '');
+  const [answer3, setAnswer3] = useState<string>(initialAnswers?.answer3 || '');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Submitted & Model Answer view state
   const [isSubmitted, setIsSubmitted] = useState<boolean>(isAlreadyCleared);
@@ -61,6 +83,7 @@ export const Mission2: React.FC<Mission2Props> = ({
       setIsFlipping(false);
       setIsSubmitted(false);
       setShowModelAnswer(false);
+      setValidationError(null);
 
       if (picked.id === 'stir') {
         sfx.playSizzle();
@@ -74,6 +97,7 @@ export const Mission2: React.FC<Mission2Props> = ({
 
   const handleQuickInsert = (field: 1 | 2 | 3, text: string) => {
     sfx.playClick();
+    setValidationError(null);
     if (field === 1) setAnswer1((prev) => (prev ? `${prev} ${text}` : text));
     if (field === 2) setAnswer2((prev) => (prev ? `${prev} ${text}` : text));
     if (field === 3) setAnswer3((prev) => (prev ? `${prev} ${text}` : text));
@@ -81,12 +105,36 @@ export const Mission2: React.FC<Mission2Props> = ({
 
   const handleSubmitAnswers = (e: React.FormEvent) => {
     e.preventDefault();
+    const a1 = answer1.trim();
+    const a2 = answer2.trim();
+    const a3 = answer3.trim();
+
+    if (!a1 || a1.length < 5) {
+      sfx.playWrong();
+      setValidationError('⚠️ 질문 ①의 답변을 최소 5자 이상 성실하게 작성해 주세요! 키워드 추천 버튼(+ 버튼)을 누르면 쉽게 작성할 수 있습니다.');
+      return;
+    }
+    if (!a2 || a2.length < 5) {
+      sfx.playWrong();
+      setValidationError('⚠️ 질문 ②(마라탕 속 재료 사용)의 답변을 최소 5자 이상 작성해 주세요!');
+      return;
+    }
+    if (!a3 || a3.length < 5) {
+      sfx.playWrong();
+      setValidationError('⚠️ 질문 ③(식품에 일어나는 과학적 변화)의 답변을 최소 5자 이상 작성해 주세요!');
+      return;
+    }
+
+    setValidationError(null);
     sfx.playFanfare();
     setIsSubmitted(true);
-    if (!answer1) setAnswer1(`${selectedMethod.name}은(는) ${selectedMethod.category}에 속하며, ${selectedMethod.description}`);
-    if (!answer2) setAnswer2(selectedMethod.maratangUsage);
-    if (!answer3) setAnswer3(selectedMethod.effect);
-    onComplete();
+    onComplete({
+      methodId: selectedMethod.id,
+      methodName: selectedMethod.name,
+      answer1: a1,
+      answer2: a2,
+      answer3: a3,
+    });
   };
 
   return (
@@ -123,17 +171,6 @@ export const Mission2: React.FC<Mission2Props> = ({
             <ChefHat className="w-4 h-4 text-[#ea580c]" />
             <span>마라탕 레시피 단서 확인하기</span>
           </button>
-
-          <button
-            onClick={() => {
-              sfx.playFanfare();
-              onComplete();
-            }}
-            className="flex items-center gap-2 bg-gradient-to-r from-[#ea580c] to-[#dc2626] hover:from-[#c2410c] hover:to-[#b91c1c] text-white font-black px-4.5 py-2 rounded-xl transition text-xs sm:text-sm font-game shadow-md border border-amber-300 cursor-pointer"
-          >
-            <span>3단계 미션(순서 재구성)으로 바로 가기</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -158,17 +195,6 @@ export const Mission2: React.FC<Mission2Props> = ({
             <Sparkles className="w-6 h-6 text-amber-200" />
             <span>🎴 조리방법 카드 뽑기</span>
           </motion.button>
-
-          <button
-            type="button"
-            onClick={() => {
-              sfx.playFanfare();
-              onComplete();
-            }}
-            className="mt-6 text-xs sm:text-sm text-orange-200 hover:text-white underline underline-offset-4 font-bold cursor-pointer transition flex items-center gap-1.5"
-          >
-            <span>3단계 미션(순서 재구성)으로 바로 넘어가기 →</span>
-          </button>
         </div>
       ) : (
         <div className="space-y-6">
@@ -464,25 +490,29 @@ export const Mission2: React.FC<Mission2Props> = ({
                 )}
               </div>
 
+              {/* Validation Warning Callout */}
+              {validationError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-rose-50 border-2 border-rose-400 p-4 rounded-2xl flex items-start gap-3 text-rose-900 text-xs sm:text-sm font-bold shadow-sm"
+                >
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <span className="block font-black text-rose-950 font-game">모둠 탐구 보고서 작성 필요</span>
+                    <p className="font-normal text-rose-800">{validationError}</p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full sm:flex-1 py-4 bg-gradient-to-r from-[#ea580c] to-[#dc2626] hover:from-[#c2410c] hover:to-[#b91c1c] text-white rounded-2xl font-black text-base sm:text-lg font-game shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 transition cursor-pointer border border-amber-300/40"
+                  className="w-full py-4 bg-gradient-to-r from-[#ea580c] to-[#dc2626] hover:from-[#c2410c] hover:to-[#b91c1c] text-white rounded-2xl font-black text-base sm:text-lg font-game shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 transition cursor-pointer border border-amber-300/40"
                 >
                   <Send className="w-5 h-5" />
-                  <span>탐구 보고서 제출하고 3단계로 이동하기 →</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sfx.playFanfare();
-                    onComplete();
-                  }}
-                  className="w-full sm:w-auto px-6 py-4 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-2xl text-sm font-game border border-stone-300 transition cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <span>3단계로 바로 이동</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>모둠 탐구 보고서 제출하기 (검증 후 3단계 진입) →</span>
                 </button>
               </div>
 
@@ -497,7 +527,7 @@ export const Mission2: React.FC<Mission2Props> = ({
               >
                 <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold font-game">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>MISSION 2 탐구 보고서 통과</span>
+                  <span>MISSION 2 탐구 보고서 검증 통과!</span>
                 </div>
 
                 <h3 className="text-2xl font-black text-emerald-950 font-game">
@@ -505,6 +535,7 @@ export const Mission2: React.FC<Mission2Props> = ({
                 </h3>
 
                 <p className="text-emerald-800 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
+                  작성하신 모둠 탐구 내용이 실시간 클라우드 현황판에 등록되었습니다.<br />
                   이제 마지막 수사 미션인 <strong>[MISSION 3: 마라탕 8단계 조리 순서 재구성]</strong>으로 이동하여 전체 요리 과정을 완성하세요!
                 </p>
 
@@ -513,11 +544,17 @@ export const Mission2: React.FC<Mission2Props> = ({
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
                     sfx.playFanfare();
-                    onComplete();
+                    onComplete({
+                      methodId: selectedMethod.id,
+                      methodName: selectedMethod.name,
+                      answer1: answer1.trim(),
+                      answer2: answer2.trim(),
+                      answer3: answer3.trim(),
+                    });
                   }}
                   className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-[#ea580c] to-[#dc2626] hover:from-[#c2410c] hover:to-[#b91c1c] text-white rounded-2xl font-black text-lg sm:text-xl font-game shadow-[0_4px_0_#450a0a] active:translate-y-1 active:shadow-none transition flex items-center justify-center gap-2 mx-auto cursor-pointer border border-amber-300/40"
                 >
-                  <span>MISSION CLEAR! 마지막 미션으로 →</span>
+                  <span>MISSION CLEAR! 3단계 미션으로 이동 →</span>
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
               </motion.div>
